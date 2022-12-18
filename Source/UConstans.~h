@@ -1,0 +1,276 @@
+//---------------------------------------------------------------------------
+
+#ifndef UConstansH
+#define UConstansH
+//---------------------------------------------------------------------------
+#endif
+
+
+
+ const AnsiString Naglowek =
+  " -------------------------------------------------------------\n"
+  "            INTCOMP - SYSTEM ALGEBRY PRZEDZIA£OWEJ            \n"
+  " -------------------------------------------------------------\n"
+  " \n"
+  " Miros³aw Miedziarek\n"
+  " Type 'help' for syntax instructions.\n"
+  " -------------------------------------------------------------\n";
+
+
+  const AnsiString IntHelp =
+  " \n\n ------------------- INTERVAL ARITHMETIC ---------------------\n\n"
+  " TYPING VALUES:\n"
+  " Intervals must be typed in following format\n"
+  "           [inf,sup]\n"
+  " ex. [1.2,0.15e-1]\n"
+  " Real numbers in square bracket:\n"
+  " ex. [52e-1] -> Result=[5.2,5.2]\n\n"
+  " ARITHMETIC OPERATORS:\n"
+  " addition       :  [,]+[,]\n"
+  " subtraction    :  [,]-[,]\n"
+  " multiplication :  [,]*[,]\n"
+  " division       :  [,]/[,] (divisor couldn't include zero!)\n"
+  " sign change    :  -[,]\n\n"
+  " INTERVAL FUNCTIONS:\n"
+  " width of interval              :  width[,]\n"
+  " radius                         :  rad[,]\n"
+  " midpoint                       :  mid[,]\n"
+  " distance of two intervals      :  [,]dist[,]\n"
+  " absolute value of interval     :  abs[,]\n"
+  " natural power                  :  [,]^[n] \n"
+  " square root                    :  sqrt[,]\n"
+  " exponent                       :  exp[,] \n"
+  " natural logarithm              :  log[,] \n"
+  " sinus                          :  sin[,] \n"
+  " cosinus                        :  cos[,] \n"
+  " tangens                        :  tg[,] \n"
+  " cotangens                      :  ctg[,] \n\n"
+  " MATRIX OPERATIONS\n"
+  " Matrices and vectors row by row separated by \';\' :\n"
+  " ex. <[1,2][3,4];[5,6][6,7]>\n\n"
+  " Inverse matrix                 :  inv<...> \n"
+  " Transpose matrix               :  trans<...> \n"
+  " Matrix determinant             :  det<...> \n"
+  " Gauss elimination              :  gauss<...> \n"
+  " Gauss partial elimination      :  gaussp<...> \n"
+  " Gauss full elimination         :  gaussf<...> \n"
+  " Solve linear equations AX=B    :  <.A.>solve<.B.> \n"
+  " where A must be square matrix and B row vector \n"
+  " Solve linear equations AX=B    :  <.A.>solvef<.B.> \n"
+  " using full Gauss elimination method \n"
+  " A/B  uses A*inv(B) \n"
+  " A*B \n"
+  " The rest of interval functions are performed element by element \n\n"
+  " Keyboard shortcuts:\n"
+  " CTRL+M - opens matrix input window.\n"
+  " CTRL+F - puts the last computed result into command line.\n"
+  " CTRL+D - puts the last typed command into command line.\n\n"
+  " -------------------------------------------------------------\n\n";
+
+
+  const AnsiString RealHelp =
+  " \n\n ---------------------- REAL RITHMETIC -----------------------\n\n"
+  " TYPING VALUES:\n"
+  " Real numbers must be typed in following format\n"
+  "           ddd.dddE-+ddd\n"
+  " ex. 123.3E-3\n\n"
+  " ARITHMETIC OPERATORS:\n"
+  " addition       :  a+b\n"
+  " subtraction    :  a-b\n"
+  " multiplication :  a*b\n"
+  " division       :  a/b (divisor couldn't be equal zero!)\n"
+  " sign change    :  -a\n\n"
+  " FUNCTIONS:\n"
+  " absolute value                 :  abs(x)\n"
+  " natural power                  :  x^n \n"
+  " square root                    :  sqrt(x)\n"
+  " exponent                       :  exp(x) \n"
+  " natural logarithm              :  log(x) \n"
+  " sinus                          :  sin(x) \n"
+  " cosinus                        :  cos(x) \n"
+  " tangens                        :  tg(x) \n"
+  " cotangens                      :  ctg(x) \n\n"
+  " MATRIX OPERATIONS\n"
+  " Matrices and vectors row by row separated by \';\' :\n"
+  " ex. <1.5,2.4 ; 3.4,5.6 ; 6.7,8.9>\n\n"
+  " Inverse matrix                 :  inv<...> \n"
+  " Transpose matrix               :  trans<...> \n"
+  " Matrix determinant             :  det<...> \n"
+  " Gauss elimination              :  gauss<...> \n"
+  " Gauss partial elimination      :  gaussp<...> \n"
+  " Gauss full elimination         :  gaussf<...> \n"
+  " Solve linear equations AX=B    :  <.A.>solve<.B.> \n"
+  " where A must be square matrix and B row vector \n"
+  " Solve linear equations AX=B    :  <.A.>solvef<.B.> \n"
+  " using full Gauss elimination method \n"
+  " A/B  uses A*inv(B) \n"
+  " A*B \n"
+  " The rest of functions are performed element by element \n\n"
+  " Keyboard shortcuts:\n"
+  " CTRL+M - opens matrix input window.\n"
+  " CTRL+F - puts the last computed result into command line.\n"
+  " CTRL+D - puts the last typed command into command line.\n\n"
+  " Questions & sugestions: mirras@tlen.pl\n\n"
+  " -------------------------------------------------------------\n\n";
+
+
+  const AnsiString IntCompFrm_CaptionPL = "IntComp - System algebry przedzia³owej";
+  const AnsiString IntCompFrm_CaptionEN = "IntComp - Interval algebra system";
+
+  const AnsiString mnuPlik_CaptionPL = "Plik";
+  const AnsiString mnuPlik_CaptionEN = "File";
+
+  const AnsiString mnuZapisz_CaptionPL = "Zapisz";
+  const AnsiString mnuZapisz_CaptionEN = "Save";
+
+  const AnsiString mnuWyjdz_CaptionPL = "WyjdŸ";
+  const AnsiString mnuWyjdz_CaptionEN = "Exit";
+
+  const AnsiString mnuOpcje_CaptionPL = "Opcje";
+  const AnsiString mnuOpcje_CaptionEN = "Options";
+
+  const AnsiString mnuWynikiPosr_CaptionPL = "Poka¿ wyniki poœrednie";
+  const AnsiString mnuWynikiPosr_CaptionEN = "Show temp results";
+
+  const AnsiString mnuZaokr_CaptionPL = "Zaokr¹glanie";
+  const AnsiString mnuZaokr_CaptionEN = "Rounding";
+
+  const AnsiString mnuZaokAuto_CaptionPL = "Auto";
+  const AnsiString mnuZaokAuto_CaptionEN = "Auto";
+
+  const AnsiString mnuZaokDonajbl_CaptionPL = "Do najbli¿szego";
+  const AnsiString mnuZaokDonajbl_CaptionEN = "To the nearest";
+
+  const AnsiString mnuZaokrObcinaj_CaptionPL = "Obcinaj";
+  const AnsiString mnuZaokrObcinaj_CaptionEN = "Truncate";
+
+  const AnsiString mnuZaokrWDol_CaptionPL = "W dó³";
+  const AnsiString mnuZaokrWDol_CaptionEN = "Down";
+
+  const AnsiString mnuZaokrWGore_CaptionPL = "W górê";
+  const AnsiString mnuZaokrWGore_CaptionEN = "Up";
+
+  const AnsiString mnuCzysc_CaptionPL = "Czyœæ ekran";
+  const AnsiString mnuCzysc_CaptionEN = "Clear screen";
+
+  const AnsiString mnuCzcionka_CaptionPL = "Czcionka";
+  const AnsiString mnuCzcionka_CaptionEN = "Font";
+
+  const AnsiString mnuKolorTla_CaptionPL = "Kolor t³a";
+  const AnsiString mnuKolorTla_CaptionEN = "Background color";
+
+  const AnsiString mnuWstaw_CaptionPL = "Wstaw";
+  const AnsiString mnuWstaw_CaptionEN = "Insert";
+
+  const AnsiString mnuMacierz_CaptionPL = "Macierz";
+  const AnsiString mnuMacierz_CaptionEN = "Matrix";
+
+  const AnsiString mnuPoprzednie_CaptionPL = "Poprzednie polecenie";
+  const AnsiString mnuPoprzednie_CaptionEN = "Previous command";
+
+  const AnsiString mnuOstWynik_CaptionPL = "Ostatni wynik";
+  const AnsiString mnuOstWynik_CaptionEN = "Last result";
+
+  const AnsiString mnuFormatuj_CaptionPL = "Formatuj";
+  const AnsiString mnuFormatuj_CaptionEN = "Format";
+
+  const AnsiString mnuNaPrzedz_CaptionPL = "Na przedzia³ow¹";
+  const AnsiString mnuNaPrzedz_CaptionEN = "To interval syntax";
+
+  const AnsiString mnuNaRzecz_CaptionPL = "Na rzeczywist¹";
+  const AnsiString mnuNaRzecz_CaptionEN = "To real syntax";
+
+  const AnsiString mnuArytmetyka_CaptionPL = "Zmieñ arytmetykê";
+  const AnsiString mnuArytmetyka_CaptionEN = "Set arithmetic";
+
+  const AnsiString mnuPrzedzialowa_CaptionPL = "Przedzia³owa";
+  const AnsiString mnuPrzedzialowa_CaptionEN = "Interval";
+
+  const AnsiString mnuRzeczywista_CaptionPL = "Rzeczywista";
+  const AnsiString mnuRzeczywista_CaptionEN = "Real";
+
+  const AnsiString mnuPomoc_CaptionPL = "Pomoc";
+  const AnsiString mnuPomoc_CaptionEN = "Help";
+
+  const AnsiString mnuOprogramie_CaptionPL = "O programie";
+  const AnsiString mnuOprogramie_CaptionEN = "About";
+
+  const AnsiString mnuPomocPomoc_CaptionPL = "Pomoc";
+  const AnsiString mnuPomocPomoc_CaptionEN = "Help";
+
+
+  const AnsiString WstawFrm_CaptionPL = "IntComp - Wstaw macierz";
+  const AnsiString WstawFrm_CaptionEN = "IntComp - Insert matrix";
+
+  const AnsiString btnAnuluj_CaptionPL = "Anuluj";
+  const AnsiString btnAnuluj_CaptionEN = "Cancel";
+
+  const AnsiString gbGenerated_CaptionPL = "Generuj a[i,j]";
+  const AnsiString gbGenerated_CaptionEN = "Generate a[i,j]";
+
+  const AnsiString edtCommand_HintPL = "Wstaw dowolne wyra¿enie matematyczne. Dozwolone zmienne: i - numer wiersza, j - numer kolumny";
+  const AnsiString edtCommand_HintEN = "Type any mathematical command. Allowed variables: i - row number, j - column number";
+
+  const AnsiString gbPredef_CaptionPL = "Predefiniowane macierze";
+  const AnsiString gbPredef_CaptionEN = "Predefinied matrices";
+
+  const AnsiString btnBoothroyd_CaptionPL = "Boothroyda Dekker";
+  const AnsiString btnBoothroyd_CaptionEN = "Boothroyda Dekker";
+
+  const AnsiString btnBoothroyd_HintPL = "Macierz Boothroyda - Dekkera.";
+  const AnsiString btnBoothroyd_HintEN = "Boothroyda - Dekker matrix";
+
+  const AnsiString btnMatrixOne_CaptionPL = "Hilberta";
+  const AnsiString btnMatrixOne_CaptionEN = "Hilbert";
+
+  const AnsiString btnMatrixOne_HintPL = "Macierz postaci: 1/(i+j-1)";
+  const AnsiString btnMatrixOne_HintEN = "Matrix of type: 1/(i+j-1)";
+
+  const AnsiString lblRozmiar_CaptionPL = "Rozmiar:";
+  const AnsiString lblRozmiar_CaptionEN = "Size:";
+
+  const AnsiString gbRozmiary_CaptionPL = "Ustal wymiary";
+  const AnsiString gbRozmiary_CaptionEN = "Dimensions";
+
+  const AnsiString btnGeneruj_CaptionPL = "Generuj";
+  const AnsiString btnGeneruj_CaptionEN = "Generate";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,864 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+
+
+
+#include "Helpers.hpp"
+#include "Interval.hpp"
+#include "IntMatrix.hpp"
+#include "RealMatrix.hpp"
+
+#include "LogForm.h"
+
+#include "IntervalParser.hpp"
+#include "RealParser.hpp"
+
+#pragma hdrstop
+
+#include <Registry.hpp>
+#include "UWstaw.h"
+#include "UIntComp.h"
+#include "UAbout.h"
+#include "UConstans.hpp"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TIntCompFrm *IntCompFrm;
+
+ IntMatrix IResult;    //result of computing
+ RealMatrix RResult;
+ bool OnIntervals=true;
+ XString CurCommand;
+ IntervalParser *IntPars;
+ RealParser *RealPars;
+ int langId;   //Polski - 0; Angielski - 1
+ bool TempRes;
+ bool IsFormatLong;
+ bool IsFormatFloat;
+ TStringDynArray *CommHistory;
+ int historyInd;
+ AnsiString formatString;
+
+//---------------------------------------------------------------------------
+__fastcall TIntCompFrm::TIntCompFrm(TComponent* Owner)
+        : TForm(Owner)
+{
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuOprogramieClick(TObject *Sender)
+{
+   AboutFrm->Caption = AboutFrm_Caption(langId);
+   AboutFrm->lblOpis->Caption = lblOpis_Caption(langId);
+   AboutFrm->lblCel->Caption = lblCel_Caption(langId);
+   AboutFrm->ShowModal();
+}
+//---------------------------------------------------------------------------
+void __fastcall TIntCompFrm::FormCreate(TObject *Sender)
+{
+
+
+ IntPars = new IntervalParser();
+ RealPars = new RealParser();
+
+ CommHistory = new TStringDynArray();
+ historyInd = 0;
+
+ mnuPrzedzialowa->Checked = true;
+ mnuZaokAuto->Checked = true;
+
+ mnuZaokDonajbl->Enabled = false;
+ mnuZaokrObcinaj->Enabled = false;
+ mnuZaokrWDol->Enabled = false;
+ mnuZaokrWGore->Enabled = false;
+
+
+ tekran->Lines->Clear();
+ AppText(Naglowek(langId));
+ AppText((AnsiString)" >> ");
+}
+
+
+//---------------------------------------------------------------------------
+void __fastcall TIntCompFrm::mnuWyjdzClick(TObject *Sender)
+{
+ SaveUserSettings();
+ Application->Terminate();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuCzcionkaClick(TObject *Sender)
+{
+   dlgFont->Font = tekran->Font;
+   if (dlgFont->Execute())
+   tekran->Font = dlgFont->Font;       
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuKolorTlaClick(TObject *Sender)
+{
+   dlgColor->Color = tekran->Color;
+  if (dlgColor->Execute())
+    tekran->Color = dlgColor->Color;
+
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuCzyscClick(TObject *Sender)
+{
+   tekran->Lines->Clear();
+   AppText(Naglowek(langId));
+   AppText((AnsiString)" >> ");
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::tekranKeyDown(TObject *Sender, WORD &Key,
+      TShiftState Shift)
+{
+
+
+   if (Key==38)
+   {
+    Key = 0;
+
+    if (CommHistory->Length>0)
+     {
+      int cur = tekran->SelStart;
+      int len = tekran->Text.Length();
+      tekran->Text = tekran->Text.Delete(cur+1,len-cur);
+      //tekran->Text = tekran->Text + CommHistory->operator [](historyInd);
+      AppText(CommHistory->operator [](historyInd));
+      tekran->SelStart = cur;
+      if (historyInd==0) historyInd = CommHistory->Length-1;
+      else historyInd--;
+     }
+     return;
+   }
+
+   if (Key==40)
+   {
+    Key = 0;
+
+    if (CommHistory->Length>0)
+     {
+      int cur = tekran->SelStart;
+      int len = tekran->Text.Length();
+      tekran->Text = tekran->Text.Delete(cur+1,len-cur);
+
+      AppText(CommHistory->operator [](historyInd));
+      tekran->SelStart = cur;
+      if (historyInd==CommHistory->Length-1) historyInd = 0;
+      else historyInd++;
+     }
+     return;
+   }
+
+   if ((!Shift.Contains(ssShift)) && (Key==219) && (tekran->SelStart==tekran->Text.Length()))
+   {
+       int ind = tekran->SelStart;
+       tekran->Text =  tekran->Text.Insert("]",ind+1);
+       tekran->SelStart = ind;
+       return;
+   }
+
+   if ((Shift.Contains(ssShift)) && (Key==188) && (tekran->SelStart==tekran->Text.Length()))
+   {
+       int ind = tekran->SelStart;
+       tekran->Text =  tekran->Text.Insert(">",ind+1);
+       tekran->SelStart = ind;
+       return;
+   }
+
+   if ((Shift.Contains(ssShift)) && (Key==219) && (tekran->SelStart==tekran->Text.Length()))
+   {
+       int ind = tekran->SelStart;
+       tekran->Text =  tekran->Text.Insert("}",ind+1);
+       tekran->SelStart = ind;
+       return;
+   }
+
+   if ((Shift.Contains(ssShift)) && (Key==57) && (tekran->SelStart==tekran->Text.Length()))
+   {
+       int ind = tekran->SelStart;
+       tekran->Text =  tekran->Text.Insert(")",ind+1);
+       tekran->SelStart = ind;
+       return;
+   }
+   
+   if (Key==13)
+   {
+     
+     int st = StrLastIndexOf(tekran->Text,">>");
+     CurCommand = tekran->Text.SubString(st,tekran->Text.Length()-st+1).c_str();
+
+     CurCommand = CurCommand.removeAll(" ");
+     CurCommand = CurCommand.trimStart(">>");
+
+     EvaluateCommand(CurCommand);
+
+     AppText((AnsiString)"\n >> ");
+   }
+}
+//---------------------------------------------------------------------------
+void TIntCompFrm::AppText(XString text)
+{
+   tekran->Text = tekran->Text + text.ToAnsiString();
+   tekran->SelStart = tekran->Text.Length();
+   SendMessageA(tekran->Handle,EM_SCROLLCARET,0,0);
+}
+//---------------------------------------------------------------------------
+void TIntCompFrm::AppText(AnsiString text)
+{
+   tekran->Text = tekran->Text + text;
+   tekran->SelStart = tekran->Text.Length();
+   SendMessageA(tekran->Handle,EM_SCROLLCARET,0,0);
+}
+//---------------------------------------------------------------------------
+void __fastcall TIntCompFrm::mnuNaPrzedzClick(TObject *Sender)
+{
+   if (tekran->SelText.Length()==0)
+   {
+     AppText((AnsiString)"\n ");
+     if (langId==0)
+     AppText((AnsiString)FormatMessagePL);
+     else
+     AppText((AnsiString)FormatMessageEN);
+     tekran->Lines->Add(" >> ");
+     return;
+   }
+   XString selText = tekran->SelText.c_str();
+   XString er;
+    tekran->Lines->Add(" >> ");
+   selText = ConvertToInterval(selText,er);
+   AppText(selText);
+
+
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuNaRzeczClick(TObject *Sender)
+{
+
+  if (tekran->SelText.Length()==0)
+   {
+     AppText((AnsiString)"\n ");
+     if (langId==0)
+     AppText((AnsiString)FormatMessagePL);
+     else
+     AppText((AnsiString)FormatMessageEN);
+     tekran->Lines->Add(" >> ");
+     return;
+   }
+   XString selText = tekran->SelText.c_str();
+   XString er;
+    tekran->Lines->Add(" >> ");
+   selText = ConvertToReal(selText,er);
+   AppText(selText);
+
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuPomocPomocClick(TObject *Sender)
+{
+   if (OnIntervals)
+                AppText(IntHelp(langId));
+            else
+                AppText(RealHelp(langId));
+   AppText((AnsiString)" >> ");
+}
+//---------------------------------------------------------------------------
+void TIntCompFrm::EvaluateCommand(XString command)
+{
+         command=command.trim();
+
+         if (command == "")
+         {
+                 return;
+         }
+
+         CommHistory->set_length(CommHistory->Length+1);
+         CommHistory->operator [](CommHistory->High) = command.ToAnsiString();
+         historyInd = CommHistory->High;
+
+
+         
+         command=command.replaceAll("width","w"); //zamienia nazwy funkcji na litery
+         command=command.replaceAll("dist","d");
+         command=command.replaceAll("rad","r");
+         command=command.replaceAll("mid","m");
+         command=command.replaceAll("abs","a");
+         command=command.replaceAll("sqrt","q");             //j k o y
+         command=command.replaceAll("exp","x");
+         command=command.replaceAll("log","l");
+         command=command.replaceAll("sin","s");
+         command=command.replaceAll("cos","c");
+         command=command.replaceAll("ctg","g");
+         command=command.replaceAll("tg","t");
+         command=command.replaceAll("inv","i");
+         command=command.replaceAll("trans","n");
+         command=command.replaceAll("det","z");
+         command=command.replaceAll("cond","j");
+         command=command.replaceAll("norm","k");
+         command=command.replaceAll("gaussf","f");
+         command=command.replaceAll("gaussp","p");
+         command=command.replaceAll("gauss","u");
+         command=command.replaceAll("solvef","b");
+         command=command.replaceAll("solvep","v");
+         command=command.replaceAll("solve","h");
+
+
+
+         if (command=="help")
+         {
+            if (OnIntervals)
+                AppText(IntHelp(langId));
+            else
+                AppText(RealHelp(langId));
+                return;
+         };
+
+
+
+         XString error="";
+         AppText((AnsiString)"\n");
+
+
+
+
+         if (OnIntervals)
+                IResult = IntPars->ParseCommand(command,error,TempRes,IResult);
+         else
+                RResult = RealPars->ParseCommand(command,error,TempRes,RResult);
+
+
+    //----------------------------------------
+    if (error=="")
+    {
+      if (OnIntervals) WriteIntervalResult(IResult);
+      else WriteRealResult(RResult);
+
+
+    }//----------------------------------------
+    else
+    {
+            AppText((XString)"\n Error: "+error+(XString)"\n\n");
+    }
+
+}
+void __fastcall TIntCompFrm::mnuPrzedzialowaClick(TObject *Sender)
+{
+ OnIntervals = true;
+ mnuPrzedzialowa->Checked = true;
+ mnuZaokAuto->Checked = true;
+ Rnear();
+
+ mnuZaokDonajbl->Enabled = false;
+ mnuZaokrObcinaj->Enabled = false;
+ mnuZaokrWDol->Enabled = false;
+ mnuZaokrWGore->Enabled = false;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuRzeczywistaClick(TObject *Sender)
+{
+   OnIntervals = false;
+   mnuRzeczywista->Checked = true;
+   mnuZaokDonajbl->Enabled = true;
+   mnuZaokrObcinaj->Enabled = true;
+   mnuZaokrWDol->Enabled = true;
+   mnuZaokrWGore->Enabled = true;
+   Rnear();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuPoprzednieClick(TObject *Sender)
+{
+  AppText(CurCommand);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuZaokAutoClick(TObject *Sender)
+{
+        Rdef();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuZaokDonajblClick(TObject *Sender)
+{
+        Rnear();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuZaokrObcinajClick(TObject *Sender)
+{
+        Rtrunc();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuZaokrWDolClick(TObject *Sender)
+{
+        Rdown();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuZaokrWGoreClick(TObject *Sender)
+{
+        Rup();
+}
+//****************************************************************************
+//                               WRITE INTERVAL RESULT
+//****************************************************************************
+void TIntCompFrm::WriteIntervalResult(IntMatrix& result)
+{
+    AppText((AnsiString)" ");
+    if (langId==0)
+     AppText((AnsiString)ResultPL);
+    else
+     AppText((AnsiString)ResultEN);
+
+    AppText((AnsiString)" = \n       ");
+    int i,j,k;
+    if ((result.ColCnt==1) && (result.RowCnt==1))
+        {
+            AppText((XString)"       "+result._el[0][0].ToStr(formatString)+(XString)"\n");
+        }
+    else
+        {
+            //
+            //get longest element length for every column to format result
+            //
+            int maxlen[10];
+            for (j=0;j<result.ColCnt;j++) maxlen[j]=0;
+
+              XString space;
+              int collen = 0;
+           for (j=0;j<result.ColCnt;j++)
+            for (i=0;i<result.RowCnt;i++)
+            {
+              collen = result._el[i][j].ToStr(formatString).length();
+              if (collen>maxlen[j])
+                maxlen[j]=collen;
+            }
+
+        XString buffer = (XString)"";
+
+          for (i=0;i<=result.RowCnt-1;i++)
+          {
+                  for (j=0;j<=result.ColCnt-1;j++)
+                  {
+                          buffer += result._el[i][j].ToStr(formatString);
+                          //add spaces that result will be correctly formated
+                          space="";
+                          for (k=0;k<maxlen[j]-result._el[i][j].ToStr(formatString).length();k++)
+                                  space+=" ";
+                          buffer+= space;
+
+                  }
+                  buffer+="\n       ";
+          }
+          AppText(buffer);
+        }
+
+        AppText((AnsiString)"\n ");
+        if (langId==0)
+         AppText((AnsiString)DimensionsPL+": ");
+        else
+         AppText((AnsiString)DimensionsEN+": ");
+
+        AppText(XString::fromInt(result.RowCnt)+(XString)"x"+XString::fromInt(result.ColCnt));
+        AppText((AnsiString)"\n\n");
+
+}
+//****************************************************************************
+//                               WRITE REAL RESULT
+//****************************************************************************
+void TIntCompFrm::WriteRealResult(RealMatrix& result)
+{
+   AppText((AnsiString)" ");
+    if (langId==0)
+     AppText((AnsiString)ResultPL);
+    else
+     AppText((AnsiString)ResultEN);
+
+    AppText((AnsiString)" = \n       ");
+
+   int i,j,k;
+   if ((result.ColCnt==1) && (result.RowCnt==1))
+   {
+        AppText((XString)"       "+  XString::fromLongDouble(result._el[0][0], formatString ).replaceAll(",",".")+(XString)"\n");
+   }
+   else
+   {
+        //
+        //get longest element length for every column to format result
+        //
+        int maxlen[10];
+        for (j=0;j<result.ColCnt;j++) maxlen[j]=0;
+        XString space;
+         int collen = 0;
+
+     for (j=0;j<result.ColCnt;j++)
+      for (i=0;i<result.RowCnt;i++)
+        {
+           collen = XString::fromLongDouble(result._el[i][j], formatString ).length();
+              if (collen>maxlen[j])
+              maxlen[j]=collen;
+        }
+
+      XString buffer = (XString)"";
+
+          for (i=0;i<=result.RowCnt-1;i++)
+          {
+              for (j=0;j<=result.ColCnt-1;j++)
+              {
+                  buffer += XString::fromLongDouble(result._el[i][j], formatString ).replaceAll(",",".");
+                  //add spaces that result will be correctly formated
+                  space="";
+                  for (k=0;k<maxlen[j]-XString::fromLongDouble(result._el[i][j], formatString ).length();k++)
+                          space+=" ";
+                  buffer += space+" ";
+
+              }
+              buffer += "\n       ";
+          }
+
+      AppText(buffer);
+    }
+
+    AppText((AnsiString)"\n ");
+    if (langId==0)
+     AppText((AnsiString)DimensionsPL+": ");
+    else
+     AppText((AnsiString)DimensionsEN+": ");
+
+    AppText(XString::fromInt(result.RowCnt)+(XString)"x"+XString::fromInt(result.ColCnt));
+    AppText((AnsiString)"\n\n");
+
+}
+void __fastcall TIntCompFrm::mnuWynikiPosrClick(TObject *Sender)
+{
+  if (TempRes==true)
+  {
+       TempResFrmHide();
+  }
+  else
+  {
+        TempResFrmShow();
+  }
+}
+
+//---------------------------------------------------------------------------
+
+
+void __fastcall TIntCompFrm::mnuMacierzClick(TObject *Sender)
+{
+  AnsiString macierz = WstawMacierz(OnIntervals);
+  if (macierz!="") AppText(macierz);
+}
+//---------------------------------------------------------------------------
+AnsiString TIntCompFrm::WstawMacierz(bool OnInt)
+{
+   WstawFrm->OnIntervals = OnInt;
+   WstawFrm->Anulowane = false;
+   WstawFrm->LangId = langId;
+   WstawFrm->_macierz = "";
+   WstawFrm->ShowModal();
+   if (!WstawFrm->Anulowane) return WstawFrm->_macierz;
+   else return "";
+}
+
+void __fastcall TIntCompFrm::mnuOstWynikClick(TObject *Sender)
+{
+   if (OnIntervals) AppText(IResult.ToStr());
+                                  else AppText(RResult.ToStr());
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuPolskiClick(TObject *Sender)
+{
+   mnuPolski->Checked = true;
+   langId = 0;
+   ReloadCaptions();
+   mnuCzysc->Click();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuAngielskiClick(TObject *Sender)
+{
+  mnuAngielski->Checked = true;
+  langId = 1;
+  ReloadCaptions();
+  mnuCzysc->Click();
+}
+//---------------------------------------------------------------------------
+void TIntCompFrm::ReloadCaptions()
+{
+  if (langId==0)
+  {
+    IntCompFrm->Caption = IntCompFrm_CaptionPL;
+    mnuPlik->Caption = mnuPlik_CaptionPL;
+    mnuZapisz->Caption =mnuZapisz_CaptionPL;
+    mnuWyjdz->Caption = mnuWyjdz_CaptionPL;
+    mnuOpcje->Caption =mnuOpcje_CaptionPL;
+    mnuWynikiPosr->Caption =mnuWynikiPosr_CaptionPL;
+    mnuZaokr->Caption = mnuZaokr_CaptionPL;
+    mnuZaokr->Caption = mnuZaokr_CaptionPL;
+    mnuZaokDonajbl->Caption = mnuZaokDonajbl_CaptionPL;
+    mnuZaokrObcinaj->Caption =mnuZaokrObcinaj_CaptionPL;
+    mnuZaokrWDol->Caption =mnuZaokrWDol_CaptionPL;
+    mnuZaokrWGore->Caption =mnuZaokrWGore_CaptionPL;
+    mnuCzysc->Caption =mnuCzysc_CaptionPL;
+    mnuCzcionka->Caption =mnuCzcionka_CaptionPL;
+    mnuKolorTla->Caption =mnuKolorTla_CaptionPL;
+    mnuJezyk->Caption = mnuJezyk_CaptionPL;
+    mnuPolski->Caption =mnuPolski_CaptionPL;
+    mnuAngielski->Caption = mnuAngielski_CaptionPL;
+    mnuWstaw->Caption =mnuWstaw_CaptionPL;
+    mnuMacierz->Caption =mnuMacierz_CaptionPL;
+    mnuPoprzednie->Caption =mnuPoprzednie_CaptionPL;
+    mnuOstWynik->Caption =mnuOstWynik_CaptionPL;
+    mnuFormatuj->Caption =mnuFormatuj_CaptionPL;
+    mnuNaPrzedz->Caption =mnuNaPrzedz_CaptionPL;
+    mnuNaRzecz->Caption = mnuNaRzecz_CaptionPL;
+    mnuFormatFormat->Caption = mnuFormatFormat_CaptionPL;
+    mnuFormatLong->Caption = mnuFormatLong_CaptionPL;
+    mnuFormatShort->Caption = mnuFormatShort_CaptionPL;
+    mnuPrecision->Caption = mnuPrecision_CaptionPL;
+    mnuPrecFloat->Caption = mnuPrecFloat_CaptionPL;
+    mnuPrecFixed->Caption = mnuPrecFixed_CaptionPL;
+    mnuArytmetyka->Caption = mnuArytmetyka_CaptionPL;
+    mnuPrzedzialowa->Caption = mnuPrzedzialowa_CaptionPL;
+    mnuRzeczywista->Caption = mnuRzeczywista_CaptionPL;
+    mnuPomoc->Caption = mnuPomoc_CaptionPL;
+    mnuOprogramie->Caption =mnuOprogramie_CaptionPL;
+    mnuPomocPomoc->Caption =mnuPomocPomoc_CaptionPL;
+  }
+  else
+  {
+    IntCompFrm->Caption = IntCompFrm_CaptionEN;
+    mnuPlik->Caption = mnuPlik_CaptionEN;
+    mnuZapisz->Caption =mnuZapisz_CaptionEN;
+    mnuWyjdz->Caption = mnuWyjdz_CaptionEN;
+    mnuOpcje->Caption =mnuOpcje_CaptionEN;
+    mnuWynikiPosr->Caption =mnuWynikiPosr_CaptionEN;
+    mnuZaokr->Caption = mnuZaokr_CaptionEN;
+    mnuZaokr->Caption = mnuZaokr_CaptionEN;
+    mnuZaokDonajbl->Caption = mnuZaokDonajbl_CaptionEN;
+    mnuZaokrObcinaj->Caption =mnuZaokrObcinaj_CaptionEN;
+    mnuZaokrWDol->Caption =mnuZaokrWDol_CaptionEN;
+    mnuZaokrWGore->Caption =mnuZaokrWGore_CaptionEN;
+    mnuCzysc->Caption =mnuCzysc_CaptionEN;
+    mnuCzcionka->Caption =mnuCzcionka_CaptionEN;
+    mnuKolorTla->Caption =mnuKolorTla_CaptionEN;
+    mnuJezyk->Caption = mnuJezyk_CaptionEN;
+    mnuPolski->Caption =mnuPolski_CaptionEN;
+    mnuAngielski->Caption = mnuAngielski_CaptionEN;
+    mnuWstaw->Caption =mnuWstaw_CaptionEN;
+    mnuMacierz->Caption =mnuMacierz_CaptionEN;
+    mnuPoprzednie->Caption =mnuPoprzednie_CaptionEN;
+    mnuOstWynik->Caption =mnuOstWynik_CaptionEN;
+    mnuFormatuj->Caption =mnuFormatuj_CaptionEN;
+    mnuNaPrzedz->Caption =mnuNaPrzedz_CaptionEN;
+    mnuNaRzecz->Caption = mnuNaRzecz_CaptionEN;
+    mnuFormatFormat->Caption = mnuFormatFormat_CaptionEN;
+    mnuFormatLong->Caption = mnuFormatLong_CaptionEN;
+    mnuFormatShort->Caption = mnuFormatShort_CaptionEN;
+    mnuPrecision->Caption = mnuPrecision_CaptionEN;
+    mnuPrecFloat->Caption = mnuPrecFloat_CaptionEN;
+    mnuPrecFixed->Caption = mnuPrecFixed_CaptionEN;
+    mnuArytmetyka->Caption = mnuArytmetyka_CaptionEN;
+    mnuPrzedzialowa->Caption = mnuPrzedzialowa_CaptionEN;
+    mnuRzeczywista->Caption = mnuRzeczywista_CaptionEN;
+    mnuPomoc->Caption = mnuPomoc_CaptionEN;
+    mnuOprogramie->Caption =mnuOprogramie_CaptionEN;
+    mnuPomocPomoc->Caption =mnuPomocPomoc_CaptionEN;
+  }
+
+}
+//---------------------------------------------------------------------------
+void __fastcall TIntCompFrm::mnuZapiszClick(TObject *Sender)
+{
+  
+  if (dlgSave->Execute())
+  {
+         tekran->Lines->SaveToFile(dlgSave->FileName);
+  }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuFormatLongClick(TObject *Sender)
+{
+  IsFormatLong = true;
+  GenerateFormatString();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuFormatShortClick(TObject *Sender)
+{
+ IsFormatLong = false;
+ GenerateFormatString();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuPrecFloatClick(TObject *Sender)
+{
+  IsFormatFloat = true;
+  GenerateFormatString();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TIntCompFrm::mnuPrecFixedClick(TObject *Sender)
+{
+  IsFormatFloat = false;
+  GenerateFormatString();
+}
+//---------------------------------------------------------------------------
+ void TIntCompFrm::LoadUserSettings()
+ {
+
+  TRegistry *Registry = new TRegistry(KEY_ALL_ACCESS);
+  try
+  {
+    Registry->RootKey = HKEY_CURRENT_USER;
+    Registry->OpenKey("SOFTWARE",false);
+    if (!Registry->KeyExists("IntComp"))
+    {
+      langId =1;
+      IsFormatFloat = false;
+      IsFormatLong = true;
+      return;
+    }
+    Registry->OpenKey("IntComp",false);
+    langId = Registry->ReadInteger("LangID");
+
+
+    OnIntervals = Registry->ReadBool("OnIntervals");
+
+    tekran->Font->Size = Registry->ReadInteger("FontSize");
+    tekran->Font->Color = Registry->ReadInteger("FontColor");
+    tekran->Font->Name = Registry->ReadString("FontName");
+
+    tekran->Color = Registry->ReadInteger("BackColor");
+    IsFormatFloat = Registry->ReadBool("IsFormatFloat");
+    IsFormatLong = Registry->ReadBool("IsFormatLong");
+    IntCompFrm->Width = Registry->ReadInteger("MainFormWidth");
+    IntCompFrm->Height = Registry->ReadInteger("MainFormHeight");
+    IntCompFrm->Left = Registry->ReadInteger("MainFormLeft");
+    IntCompFrm->Top = Registry->ReadInteger("MainFormTop");
+    int formState = Registry->ReadInteger("MainFormState");
+    switch (formState)
+    {
+      case 0: IntCompFrm->WindowState = wsNormal; break;
+      case 1: IntCompFrm->WindowState = wsMaximized; break;
+      case 2: IntCompFrm->WindowState = wsMinimized; break;
+      default: IntCompFrm->WindowState = wsNormal; break;
+    }
+
+  }
+  __finally
+  {
+    delete Registry;
+  }
+
+
+ };
+//---------------------------------------------------------------------------
+ void TIntCompFrm::SaveUserSettings()
+ {
+  TRegistry *Registry = new TRegistry(KEY_ALL_ACCESS);
+  try
+  {
+    Registry->RootKey = HKEY_CURRENT_USER;
+    Registry->OpenKey("SOFTWARE",false);
+    Registry->OpenKey("IntComp",true);
+
+    Registry->WriteInteger("LangID",langId);
+    Registry->WriteBool("OnIntervals",OnIntervals);
+    Registry->WriteBool("IsFormatFloat",IsFormatFloat);
+    Registry->WriteBool("IsFormatLong",IsFormatLong);
+
+    Registry->WriteInteger("FontSize",tekran->Font->Size);
+    Registry->WriteInteger("FontColor",tekran->Font->Color);
+    Registry->WriteString("FontName",tekran->Font->Name);
+
+    Registry->WriteInteger("MainFormWidth",IntCompFrm->Width);
+    Registry->WriteInteger("MainFormHeight",IntCompFrm->Height);
+    Registry->WriteInteger("MainFormLeft",IntCompFrm->Left);
+    Registry->WriteInteger("MainFormTop",IntCompFrm->Top);
+    Registry->WriteInteger("BackColor",tekran->Color);
+
+    switch (IntCompFrm->WindowState)
+    {
+      case wsNormal: Registry->WriteInteger("MainFormState",0); break;
+      case wsMaximized: Registry->WriteInteger("MainFormState",1); break;
+      case wsMinimized: Registry->WriteInteger("MainFormState",2); break;
+    }
+
+  }
+  __finally
+  {
+    delete Registry;
+  }
+ };
+//---------------------------------------------------------------------------
+
+ void TIntCompFrm::GenerateFormatString()
+ {
+  if (IsFormatLong)
+  formatString = "0.00000000000000000";
+  else
+  formatString = "0.00000";
+
+  if (IsFormatFloat)
+  formatString = formatString +"E+0000";
+
+  mnuFormatLong->Checked = IsFormatLong;
+  mnuFormatShort->Checked = !IsFormatLong;
+
+  mnuPrecFloat->Checked = IsFormatFloat;
+  mnuPrecFixed->Checked = !IsFormatFloat;
+
+ }
+void __fastcall TIntCompFrm::FormClose(TObject *Sender,
+      TCloseAction &Action)
+{
+ SaveUserSettings();
+}
+//---------------------------------------------------------------------------
+ void TIntCompFrm::TempResFrmShow()
+ {
+        TempRes = true;
+        LogFrm->Show();
+        FocusControl(this->tekran);
+        SendMessageA(tekran->Handle,EM_SCROLLCARET,0,0);
+ };
+//---------------------------------------------------------------------------
+ void TIntCompFrm::TempResFrmHide()
+ {
+        TempRes = false;
+        LogFrm->Hide();
+        
+        SendMessageA(tekran->Handle,EM_SCROLLCARET,0,0);
+ };
+void __fastcall TIntCompFrm::FormShow(TObject *Sender)
+{
+  LoadUserSettings();
+  ReloadCaptions();
+  GenerateFormatString();
+  mnuPrzedzialowa->Checked = OnIntervals;
+  mnuRzeczywista->Checked = !OnIntervals;
+   if (langId==0)
+    {
+      mnuPolski->Checked = true;
+    }
+    else
+    {
+      mnuAngielski->Checked = true;
+    }
+  tekran->Lines->Clear();
+  AppText(Naglowek(langId));
+  AppText((AnsiString)" >> ");
+}
+//---------------------------------------------------------------------------
+
